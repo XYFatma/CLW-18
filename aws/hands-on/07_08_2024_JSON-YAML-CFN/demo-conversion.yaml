@@ -1,0 +1,9 @@
+instructors:
+  - name: aslan
+    job: solutions-arct
+    department: aws
+    age: 32
+  - name: osvaldo
+    job: solutions-arct
+    department: aws
+    age: 40

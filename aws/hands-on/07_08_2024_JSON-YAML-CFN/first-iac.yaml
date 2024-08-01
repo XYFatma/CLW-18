@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Bu template dosyası, SSH ile bağlanmayı hazır kılan, onun dışında ami-id'si bile hardcoded olan bir instance ayağa kaldıracaktır.
+  
+Resources:
+  CFNInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-06c68f701d8090592
+      InstanceType: t2.micro
+      KeyName: morgoliath-clarusway # Key-pair'inizi değiştirmeyi unutmayınız.
+      SecurityGroups: 
+        - !Ref CFNSecGrp
+      Tags:
+        - Key: Name
+          Value: Aslan-first-iac-instance
+  
+  CFNSecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Bu guvenlik grubu SSH baglantisi saglar. # Required
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
