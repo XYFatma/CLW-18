@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  CloudFormation Template for Phonebook Application. This template creates Application Load Balancer 
+  with Auto Scaling Group of Amazon Linux 2023  EC2 Instances which host Python Flask Web Application.
+  EC2 instances are placed within WebServerSecurityGroup which allows http (80) connections only from ALBSecurityGroup,
+  and allows tcp(3306) connections only within itself. RDS DB instance is placed within WebServerSecurityGroup 
+  so that Database Server can communicate with Web Servers. Application Load Balancer is placed within ALBSecurityGroup 
+  which allows http (80) and SSH (22)connections from anywhere. WebServerASG Auto Scaling Group is using the LT 
+  Launch Template in order to spin up instances needed. LT Launch Template is configured to prepare Python Flask 
+  environment on EC2, and to deploy Phonebook Application on Flask Server after downloading the app code 
+  from Github repository.
+Parameters:
+ 
+  
+Resources:
+
+  autoScalingGroup:
+
+  applicationLoadBalancerListener:
+    
+
+  applicationLoadBalancer:
+    
+
+  launchTemplate:
+   
+
+
+  targetGroup:
+    
+
+  dBInstance:
+    
+
+  wBSecurityGroup:
+   
+
+  webServerSecurityGroup:
+    
+
+  applicationLoadBalancerSecurityGroup:
+    
+Outputs:
+  

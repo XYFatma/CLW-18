@@ -1,0 +1,181 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This CFN template create ASG and ALB with ASG Target Tracking Policy via CloudFormation template. 
+Parameters:
+
+  myVPC:
+    Description: Choose your vpc
+    Type: AWS::EC2::VPC::Id
+  
+  myKeyPair:
+    Description: choose your keypair
+    Type: AWS::EC2::KeyPair::KeyName
+
+  myInstanceType:
+    Description: choose your instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t2.nano
+
+  myEnv:
+    Description: choose your env
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - test
+
+  mySubnets:
+    Description: choose atleast two subnets from different AZ
+    Type: List<AWS::EC2::Subnet::Id>
+
+Mappings:
+  myRegionImageMap:
+    us-east-1:
+      prod: ami-0427090fd1714168b
+      test: ami-08c60224b47a6fc12
+    us-east-2:
+      prod: ami-00db8dadb36c9815e
+      test: ami-09b90e09742640522
+    us-west-1:
+      prod: ami-03ed1381c73a5660e
+      test: ami-0827b6c5b977c020e
+  
+Resources:
+
+  myASGPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref myASG # Required
+      PolicyType:  TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification: 
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60.0
+
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: osvaldo-asg-cfn-18
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !GetAtt myLT.LaunchTemplateId
+        Version: !GetAtt myLT.DefaultVersionNumber
+      MaxSize: 3 # Required
+      MinSize: 1 # Required
+      TargetGroupARNs: 
+        - !GetAtt myTargetGrp.TargetGroupArn # !Ref myTargetGrp
+      VPCZoneIdentifier: !Ref mySubnets
+
+  myListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - TargetGroupArn: !GetAtt myTargetGrp.TargetGroupArn # !Ref myTargetGrp
+          Type: forward
+      LoadBalancerArn: !GetAtt myALB.LoadBalancerArn # !Ref myALB
+      Port: 80
+      Protocol: HTTP
+
+  myALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: osvaldo-asg-cfn-18
+      SecurityGroups: 
+        - !Ref mySecGrp
+      Subnets: !Ref mySubnets
+      Type: application
+
+  myLT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !FindInMap
+          - myRegionImageMap
+          - !Ref "AWS::Region"
+          - !Ref myEnv
+        InstanceType: !Ref myInstanceType
+        KeyName: !Ref myKeyPair
+        SecurityGroupIds:
+          - !Ref mySecGrp #!GetAtt mySecGrp.GroupId
+        UserData: !Base64 |
+          #!/bin/bash
+          #update os
+          dnf update -y
+          #install apache server
+          dnf install -y httpd
+          # get private ip address of ec2 instance using instance metadata
+          TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` \
+          && PRIVATE_IP=`curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4`
+          # get public ip address of ec2 instance using instance metadata
+          TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` \
+          && PUBLIC_IP=`curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4` 
+          # get date and time of server
+          DATE_TIME=`date`
+          # set all permissions
+          chmod -R 777 /var/www/html
+          # create a custom index.html file
+          echo "<html>
+              <head>
+              <title> Application Load Balancer</title>
+              </head>
+              <body>
+                  <h1>Testing Application Load Balancer</h1>
+                  <h2>Congratulations! You have created an instance from Launch Template</h2>
+                  <h3>This web server is launched from the launch template by Osvaldo via CFN</h3>
+                  <p>This instance is created at <b>$DATE_TIME</b></p>
+                  <p>Private IP address of this instance is <b>$PRIVATE_IP</b></p>
+                  <p>Public IP address of this instance is <b>$PUBLIC_IP</b></p>
+              </body>
+              </html>" > /var/www/html/index.html
+              # start apache server
+              systemctl start httpd
+              systemctl enable httpd
+      LaunchTemplateName: osvaldo-asg-cfn-18
+
+  myTargetGrp:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Name: osvaldo-asg-cfn-18
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref myVPC
+
+  mySecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh and http # Required
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags: 
+        - Key: Name
+          Value: osvaldo-cfn-asg-18
+      VpcId: !Ref myVPC
+  
+Outputs:
+  ShowDNS:
+    Description: DNS of ALB
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt myALB.DNSName

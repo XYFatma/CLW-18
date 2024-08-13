@@ -13,7 +13,7 @@ AMI             : Amazon Linux 2023
 Instance Type   : t2.micro
 Network         : clarus-vpc
 Subnet          : clarus-az1a-private-subnet
-Security Group  :
+Security Group  : 
     Sec.Group Name : Private Sec.group
     Rules          : TCP --- > 22 ---> Anywhere
                      All ICMP IPv4  ---> Anywhere
@@ -31,7 +31,7 @@ AMI             : Amazon Linux 2023
 Instance Type   : t2.micro
 Network         : clarus-vpc
 Subnet          : clarus-az1a-public-subnet
-Security Group  :
+Security Group  : 
     Sec.Group Name : Public Sec.group(Bastion Host)
     Rules          : TCP --- > 22 ---> Anywhere
                    : All ICMP IPv4  ---> Anywhere
@@ -71,7 +71,7 @@ eval "$(ssh-agent)"
 ssh-add ./[your pem file name]
 ```
 
-- connect to the ec2-in-az1b-public-sn instance in public subnet.
+- connect to the ec2-in-az1b-public-sn instance in public subnet. 
 
 - if we don't want to create a config file, we have another option, using -A flag with the ssh command. `-A` option `enables forwarding of the authentication agent connection`. It means that, it forwards your SSH auth schema to the remote host. So you can use SSH over there as if you were on your local machine.
 
@@ -79,8 +79,8 @@ ssh-add ./[your pem file name]
 ssh -A ec2-user@ec2-3-88-199-43.compute-1.amazonaws.com
 ```
 
-- once logged into the ec2-in-az1b-public-sn (bastion host/jump box), connect to
-  the ec2-in-az1b-private-sn instance in the private subnet
+- once logged into the ec2-in-az1b-public-sn (bastion host/jump box), connect to 
+the ec2-in-az1b-private-sn instance in the private subnet 
 
 ```bash
 ssh ec2-user@[Your private EC2 private IP]
@@ -90,7 +90,7 @@ ssh ec2-user@[Your private EC2 private IP]
 
 ### Part 3 - Creating NAT Gateway
 
-- discuss about how to connect to internet from the Private EC2 in private subnet
+- discuss about how to connect to internet from the Private EC2 in private subnet 
 - NAT Gateway is not free and has no Free Tier
 
 Step 1 : Create Elastic IP
@@ -133,7 +133,7 @@ STEP 3 : Modify Route Table of Private Instance's Subnet
 
 - Select "clarus-private-rt" ---> Routes ----> Edit Rule ---> Add Route
 
-Destination : 0.0.0.0/0
+Destination     : 0.0.0.0/0
 Target ----> Nat Gateway ----> clarus-nat-gateway
 
 - click save routes
@@ -148,7 +148,7 @@ Target ----> Nat Gateway ----> clarus-nat-gateway
 
 - Go to VPC console on left hand menu and select Elastic IP tab
 
-- Select "First Elastic IP" ----> Actions ----> Release Elastic IP Address ----> Release
+- Select "First Elastic IP" ----> Actions ----> Release Elastic IP Address ----> Release 
 
 ### Part 4 - Creating NAT Instance
 
@@ -161,7 +161,7 @@ AMI             : ami-0780b09c119334593 (Nat Instance - [amzn-ami-vpc])
 Instance Type   : t2.micro
 Network         : clarus-vpc
 Subnet          : clarus-az1a-public-subnet
-Security Group  :
+Security Group  : 
     Sec.Group Name : Public Sec.group
     Rules          : TCP ---> 22 ---> Anywhere
                    : All ICMP IPv4  ---> Anywhere
@@ -173,7 +173,6 @@ Tag             :
 
 ```text
 aws ec2 run-instances --image-id ami-0aa210fd2121a98b7 --instance-type t2.micro --key-name XXX --security-group-ids sg-XXX --subnet-id subnet-XXX
-aws ec2 run-instances --image-id ami-0aa210fd2121a98b7 --instance-type t2.micro --key-name firstkey --security-group-ids sg-0e3971182d25921ad --subnet-id subnet-054e122d4f76649eb
 ```
 
 - Select created Nat Instance on EC2 list
@@ -190,7 +189,7 @@ STEP 2: Configuring the Route Table
 
 - Add Route
 
-Destination : 0.0.0.0/0
+Destination     : 0.0.0.0/0
 Target ----> Instance ----> Nat Instance
 
 - Connect to private Instance via bastion host and ping <www.google.com> to show response.

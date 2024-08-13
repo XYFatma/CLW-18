@@ -55,7 +55,7 @@ Security Group:
 sudo apt update -y && sudo apt upgrade -y
 
 
-Note: If you see a warning about restarting use this command: sudo reboot now, after using this command
+Note: If you see a warning about restarting use this command: sudo reboot now, after using this command 
 try to connect to instance with ssh
 ```
 
@@ -105,7 +105,7 @@ Free tier
 ```text
 DB instance identifier: root-RDS
 Master username: admin
-Master password: Pl123456789!
+Master password: Pl123456789
 ```
 
 - DB instance size
@@ -167,9 +167,12 @@ Maintenance
 Deletion protection: ****Disabled
 ```
 
-- Show that AWS automatically add a new security groups both EC' and RDS for connectivity.
+- Show that AWS automatically add a new security groups both EC' and RDS for connectivity. 
+
+
 
 ### STEP 2 - Connecting to RDS DB Instance
+
 
 - Connect the RDS MySQL DB instance with admin user, and paste the password when prompted.
 
@@ -183,7 +186,7 @@ mysql -h Your RDS Endpoint -u admin -p
 SHOW DATABASES;
 ```
 
-- Choose a database
+- Choose a database 
 
 ```sql
 USE clarusway;
@@ -198,6 +201,7 @@ SHOW TABLES;
 - Show current users defined in the RDS DB instance.
 
 ### STEP 3 - Creating Tables in RDS DB Instance and Populating with Data
+
 
 - Create a table named `offices` in clarusway database
 
@@ -294,7 +298,7 @@ EXIT;
 
 - For `point in time recovery` PART (PART-4), please note down the current time. (Exp: August 12, 2020, 22:45:34, UTC +3) and let the students know:
 
-  -enter the time: 11:35:15
+     -enter the time: 11:35:15
 
 ## Part 2 - Taking a Snapshot from RDS DB Instance
 
@@ -311,8 +315,8 @@ EXIT;
   DB Instance: root-RDS
   Snapshot name : Manual-Snapshot-RDS-Mysql
   ```
-
   - Create
+  
 
 ## Part 3 - Recovering RDS DB Instance from Manual Snapshot
 
@@ -323,35 +327,33 @@ EXIT;
 ```bash
 mysql -h RDS_ENDPOINT -u admin -p
 ```
-
-- Choose a database again
+- Choose a database again 
 
 ```sql
 USE clarusway;
 ```
 
-- Delete `employees` who earns salary above `$70000` from the `clarusway` db on `root-RDS`.
+  - Delete `employees` who earns salary above `$70000` from the `clarusway` db on `root-RDS`.
 
-  - Show all data in `employee` table.
+    - Show all data in `employee` table.
 
-  ```sql
-  SELECT * FROM employees;
-  ```
+    ```sql
+    SELECT * FROM employees;
+    ```
 
-  - Delete `employees` who have salary above `$70000`:
+    - Delete `employees` who have salary above `$70000`:
 
-  ```sql
-  DELETE FROM employees WHERE salary > 70000;
-  ```
+    ```sql
+    DELETE FROM employees WHERE salary > 70000;
+    ```
 
-  - Show that records left in `employees` tables are the ones who have salary lower than $70000.
+    - Show that records left in `employees` tables are the ones who have salary lower than $70000. 
 
-  ```sql
-  SELECT * FROM employees;
+    ```sql
+    SELECT * FROM employees;
 
-  There are only 7 personal now.
-  ```
-
+    There are only 7 personal now.
+    ```
 ### STEP 2 - Restore from manuel Snapshot
 
 - Restore database from manual snapshot as new DB instance and name it as `restored-from-man-snapshot`.
@@ -363,13 +365,13 @@ USE clarusway;
   ```text
   - DB instance settings:
     DB Engine : MySQL Community
-
+  
   - Settings
     DB instance identifier:restored-from-man-snapshot
 
   - Instance configuration
     DB instance class: Burstable classes/db.t2.micro (select include previous generation classes)
-    (System changed it automatically to the Standard classes)
+    (System changed it automatically to the Standard classes) 
     ***Select Burstable classes (includes t classes)
     ***t2.micro
   - Storage
@@ -378,7 +380,7 @@ USE clarusway;
 
   - Availability and durability:
     Do not create a standby instance
-
+    
   - Connectivity:
     Virtual private cloud (VPC)Info: Default
     Subnet Group : Default
@@ -386,7 +388,7 @@ USE clarusway;
     Existing VPC security groups: DatabaseSecGrb
     Certificate authority: default
     Additional Configuration: Database port:3306
-
+  
   - Database authentication:
     Password authentication
 
@@ -424,13 +426,11 @@ SHOW TABLES;
 ```sql
 SELECT * FROM employees;
 ```
-
 - Exit from`restored-from-man-snapshot` database
 
 ```sql
 EXIT;
 ```
-
 ## Part 4 - Restoring RDS DB Instance from a "Point in Time"
 
 - Connect to the 'root-RDS` database again.
@@ -438,8 +438,7 @@ EXIT;
 ```bash
 mysql -h [root-RDSENDPOINT] -u admin -p
 ```
-
-- Choose a database
+- Choose a database 
 
 ```sql
 USE clarusway;
@@ -450,15 +449,13 @@ USE clarusway;
 ```sql
 DELETE FROM employees WHERE salary > 60000;
 ```
-
 - Show the data in employees table
 
 ```sql
 SELECT * FROM employees;
 
-there are only 4 records
+there are only 4 records 
 ```
-
 - To rescue the data we'll Restore database from the "point in time snapshot" that will be named as `restored-from-point-in-time-RDS`.
 
   - Go to Amazon RDS console and select `root-RDS` database.
@@ -537,7 +534,7 @@ mysqldump -h [restored-from-point-in-time-RDS endpoint] -u admin -p clarusway > 
 
 - Show `backup.sql` file with `ls` command.
 
-- Restore the backup of `clarusway` db on to the MySQL DB Server (`root-RDS` instance) using `backup.sql` file
+- Restore the backup of `clarusway` db on to the MySQL DB Server (`root-RDS` instance) using  `backup.sql` file
 
 ```bash
 mysql -h [root-RDS endpoint] -u admin -p clarusway < backup.sql
@@ -556,24 +553,22 @@ SHOW DATABASES;
 USE clarusway;
 SELECT * FROM employees;
 ```
-
-## Part 6 - CLEANING :
+## Part 6 - CLEANING : 
 
 - Warning!!!! Do not forget to do seen below while deleting otherwise this may charge
 
 - Delete the manuel snapshot !!!!
+  -  Go to left hand menu >>> Select Snapshots >>>>> Manuel Snapshot  >>> delete 
+  Note : Automated backups will be disappear after you delete the RDS. No need to take any action.
 
-  - Go to left hand menu >>> Select Snapshots >>>>> Manuel Snapshot >>> delete
-    Note : Automated backups will be disappear after you delete the RDS. No need to take any action.
+- Delete the RDS 3 instances !!! 
+  
+    ```text
+      Create final snapshot?    : Unchecked *
+      Retain automated backups  : Unchecked *
+      I acknowledge..           : Checked
 
-- Delete the RDS 3 instances !!!
-
-  ```text
-    Create final snapshot?    : Unchecked *
-    Retain automated backups  : Unchecked *
-    I acknowledge..           : Checked
-
-    Type "delete me "
-  ```
+      Type "delete me "
+    ```
 
 - Delete MariaDb Client EC2 Instance
