@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Purpose of the this hands-on training is to creating a DNS record sets and implement Route 53 routing policies.
+Parameters:
+
+  LatestAmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+    
+  LatestWinAmiId:
+    Description: windows
+    Type: AWS::EC2::Image::Id
+    Default: ami-07d9456e59793a7d5 #you need to update regularly.
+
+  defaultSubnetId:
+    Description: Choose your subnetId from default vpc
+    Type: AWS::EC2::Subnet::Id
+
+  myWindowsSubnetId:
+    Description: Choose your PUBLIC subnetId from clarusvpc
+    Type: AWS::EC2::Subnet::Id
+
+  myLocalServerSubnetId:
+    Description: Choose your PUBLIC subnetId from clarusvpc
+    Type: AWS::EC2::Subnet::Id
+
+  myKeyPair:
+    Description: Choose your keypair
+    Type: AWS::EC2::KeyPair::KeyName
+
+  defaultVPC:
+    Description: Choose your default VPC
+    Type: AWS::EC2::VPC::Id
+
+  myClarusVpc:
+    Description: Choose your clarusvpc
+    Type: AWS::EC2::VPC::Id
+
+  myInstanceType:
+    Description: Choose your ec2-type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+Resources:
+  InstanceNVirgina:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref myInstanceType
+      KeyName: !Ref myKeyPair
+      SubnetId: !Ref defaultSubnetId
+      SecurityGroupIds: 
+        - !Ref mySecGrpDefaultVPC
+      Tags:
+        - Key: Name
+          Value: N.virginia_1
+
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        yum install -y wget
+        cd /var/www/html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/N.virginia_1/index.html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/N.virginia_1/N.virginia_1.jpg
+        systemctl start httpd
+        systemctl enable httpd
+
+  InstanceJapan:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref myInstanceType
+      KeyName: !Ref myKeyPair
+      SubnetId: !Ref defaultSubnetId
+      SecurityGroupIds: 
+        - !Ref mySecGrpDefaultVPC
+      Tags:
+        - Key: Name
+          Value: Geo-Japan
+
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        yum install -y wget
+        cd /var/www/html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/geo-japon/index.html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/geo-japon/Tsubasa.jpg
+        systemctl start httpd
+        systemctl enable httpd
+
+  InstanceEurope:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref myInstanceType
+      KeyName: !Ref myKeyPair
+      SubnetId: !Ref defaultSubnetId
+      SecurityGroupIds: 
+        - !Ref mySecGrpDefaultVPC 
+      Tags:
+        - Key: Name
+          Value: Geo-Europe
+
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        yum install -y wget
+        cd /var/www/html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/frankfurt/index.html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/frankfurt/frankfurt.jpg
+        systemctl start httpd
+        systemctl enable httpd
+
+  InstanceLocalClarusVPC:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref myInstanceType
+      KeyName: !Ref myKeyPair
+      SubnetId: !Ref myLocalServerSubnetId
+      SecurityGroupIds: 
+        - !Ref mySecGrpClarusVpc
+      Tags:
+        - Key: Name
+          Value: Local
+
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        yum install -y wget
+        chkconfig httpd on
+        cd /var/www/html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/local/index.html
+        wget https://raw.githubusercontent.com/awsdevopsteam/route-53/master/local/Local.jpg
+        service httpd start
+
+  InstanceWindows:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestWinAmiId
+      InstanceType: !Ref myInstanceType
+      KeyName: !Ref myKeyPair
+      SubnetId: !Ref myWindowsSubnetId
+      SecurityGroupIds: 
+        - !Ref mySecGrpClarusVpcWin
+      Tags:
+        - Key: Name
+          Value: Windows
+
+
+  mySecGrpDefaultVPC:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP and SSH
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref defaultVPC
+
+  mySecGrpClarusVpc:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP and SSH
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+      VpcId: !Ref myClarusVpc
+
+  mySecGrpClarusVpcWin:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDP # Required
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+
+      VpcId: !Ref myClarusVpc
