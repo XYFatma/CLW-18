@@ -81,13 +81,13 @@ You can use "scp" to transfer your .pem key.
 "OR" 
 
 # 8. Type following code to start ssh-agent.
-cd
+eval "$(ssh-agent)"
 
 # 9. Add your private key to the ssh agent.
 ssh-add KEY_NAME_HERE.pem # Be careful about the path of your key, use relative or absolute path.
 
 # 10. Connect to the "Wordpress-Bastion Host" instance in "public-1b" subnet.
-ssh -A  3.88.199.43 (Public IP of Wordpress-Bastion Host) # Don't forget to change the IP with your instance IP.
+ssh -A ec2-user@3.88.199.43 (Public IP of Wordpress-Bastion Host) # Don't forget to change the IP with your instance IP.
 
 # 11. connect to the Database instance in the "private-1b" subnet.
 ssh ec2-user@10.7.2.20 (Private IP of Database Instance) # Don't forget to change the IP with your instance IP.

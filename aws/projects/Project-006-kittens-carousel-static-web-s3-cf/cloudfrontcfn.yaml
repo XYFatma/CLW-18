@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This cfn file is used for creating a template which runs S3 static 
+  web-hosting using cloudfront distribution.
+Parameters:
+
+Resources:
+  
+
+Outputs:
+
+  BucketName: 
+    
+  CloudfrontEndpoint:
+    
+  FullDomainName:
+    
