@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This CFN template create ASG and ALB via CloudFormation template for WAF.
+Parameters:
+
+  latestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64'
+
+  myVPC:
+    Description: Choose your vpc
+    Type: AWS::EC2::VPC::Id
+
+  myKeyPair:
+    Description: Choose your keypair
+    Type: AWS::EC2::KeyPair::KeyName
+  
+  myInstanceType:
+    Description: Choose you instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t2.nano
+
+  mySubnets:
+    Description: Choose at least 2 subnets
+    Type: List<AWS::EC2::Subnet::Id>
+  
+Resources:
+
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: osvaldo-asg-cfn-18
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      LaunchTemplate:
+        LaunchTemplateId: !GetAtt myLT.LaunchTemplateId #!Ref myLT
+        Version: !GetAtt myLT.DefaultVersionNumber
+      MaxSize: 3 # Required
+      MinSize: 1 # Required
+      TargetGroupARNs: 
+        - !GetAtt myTargetGrp.TargetGroupArn # !Ref myTargetGrp
+      VPCZoneIdentifier: !Ref mySubnets
+  
+  myListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: # Required
+        - Type: forward
+          TargetGroupArn: !GetAtt myTargetGrp.TargetGroupArn # !Ref myTargetGrp
+      LoadBalancerArn: !GetAtt myALB.LoadBalancerArn #!Ref myALB
+      Port: 80
+      Protocol: HTTP
+  
+
+  myALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: osvaldo-asg-cfn-08
+      SecurityGroups: 
+        - !Ref mySecGrp 
+      Subnets: !Ref mySubnets
+      Type: application
+
+  myLT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Ref latestAmiId
+        InstanceType: !Ref myInstanceType
+        KeyName: !Ref myKeyPair
+        SecurityGroupIds:
+          - !Ref mySecGrp
+        UserData: !Base64 |
+          #!/bin/bash -x
+          yum update -y
+          yum install -y httpd
+          chmod -R 777 /var/www/html
+          echo "<html>
+          <head>
+              <title> Web Server Running in AWS</title>
+          </head>
+          <body>
+              <h1>This web server is protected by AWS WAF</h1>
+          </body>
+          </html>" > /var/www/html/index.html
+          systemctl start httpd
+          systemctl enable httpd
+      LaunchTemplateName: osvaldo-asg-cfn-08
+
+  myTargetGrp:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Name: osvaldo-asg-cfn-18
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref myVPC
+  
+  mySecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows ssh(22) and http(80)  # Required
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags: 
+        - Key: Name
+          Value: osvaldo-cfn-asg-08
+      VpcId: !Ref myVPC
+
+
+Outputs:
+  ShowDNS:
+    Description: DNS of ALB
+    Value: !Join
+      - ''
+      - - 'http://'
+        - !GetAtt myALB.DNSName
